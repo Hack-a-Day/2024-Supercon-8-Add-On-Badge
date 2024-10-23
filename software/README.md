@@ -1,3 +1,3 @@
 # Resources
 
-![Badge Schematic](resources/badge_photos/supercon8_sao_badge_featured.png)
+![Badge Schematic](hardware/Badge_2024_schematic.jpg)
