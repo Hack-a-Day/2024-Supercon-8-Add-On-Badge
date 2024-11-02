@@ -5,10 +5,13 @@ counter = 0
 delay_time = 100
 direction = 1
 velocity = 0
+location = 0
+smoothed_loc = 0
 step = 1000
 step_change = -1
 c2 = 0
 tw = 0
+prev_tw = 0
 vel_array = [1,2,4,8,16,32,64]
 loc_array = [0,0,0,0,0,0,0]
 rot_count = 0
@@ -37,13 +40,20 @@ while True:
 
     ## see what's going on with the touch wheel
     if touchwheel_bus:
-        last_tw = tw
+        
         tw = touchwheel_read(touchwheel_bus)
-        print(tw)
-        if (last_tw - tw) % 256 < (tw - last_tw) % 256:
-            velocity = (last_tw - tw) % 256
-        else:
-            velocity =  -((tw - last_tw) % 256)
+        if tw != 0:
+            
+            #temploc = location % 256
+            if (prev_tw - tw) % 256 < (tw - prev_tw) % 256:
+                velocity = (prev_tw - tw) % 256
+            else:
+                velocity =  -((tw - prev_tw) % 256)
+            location = location + velocity
+            smoothed_loc = (location + smoothed_loc * 3) >> 2 
+            print(smoothed_loc)
+            prev_tw = tw
+            
           
     step = step + step_change      
     if step > 2000 or step < 400:
@@ -82,7 +92,7 @@ while True:
                 
         ## display touchwheel on petal
         if petal_bus and touchwheel_bus:
-            for i in range(4):
+            for i in range(4):im
                 base_addr = 0x10
                 #intensity_byte = (intensity_regs[i*2+1] << 4) | intensity_regs[i*2]
                 intensity = int(15.5 * (step - 400) / (2000 - 400))
@@ -102,7 +112,7 @@ while True:
 
 
     
-    time.sleep_ms(5)
+    time.sleep_ms(10)
     bootLED.off()
 
 
