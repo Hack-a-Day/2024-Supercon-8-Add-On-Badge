@@ -1,7 +1,8 @@
 from machine import I2C, Pin
 import time
+import math
 
-counter = 0
+counter = 0.0
 delay_time = 100
 direction = 1
 velocity = 0
@@ -71,15 +72,14 @@ while True:
             
     
     c2 = c2 + (step >> 3)
-    limit = 1000
+    limit = 500
     if c2 >= limit:
         
         #print(velocity)
         c2 = c2 - limit
-        counter = counter + direction
-        if counter == 18 or counter == 0:
-            direction = -direction
-            #print(velocity)
+        counter = counter + math.pi/16
+        if counter > 2 * math.pi:
+            counter = counter - 2 * math.pi
         
         rot_count = (rot_count + 1) % 8
         for i in range(8):
@@ -92,17 +92,25 @@ while True:
                 
         ## display touchwheel on petal
         if petal_bus and touchwheel_bus:
-            for i in range(4):im
+            phase = int((math.sin(counter) + 1) * 9)
+            phase2 = int((math.sin(counter) + 1) * 4)
+            for i in range(4):
                 base_addr = 0x10
                 #intensity_byte = (intensity_regs[i*2+1] << 4) | intensity_regs[i*2]
                 intensity = int(15.5 * (step - 400) / (2000 - 400))
-                intensity_byte = intensity << 4 | intensity
+                if phase <= 1:
+                    temp = phase << 4 - 1;
+                    intensity_byte = temp << 4 | temp
+                else:
+                    intensity_byte = phase2 << 4 | phase2
                 
                 petal_bus.writeto_mem(PETAL_ADDRESS, base_addr+i, bytes([intensity_byte]))
             
-            bitmap = 0
-            for i in range(counter):
-                bitmap = ((0x7f << counter) & 0x7f00) >> 8 
+            if phase <= 1:
+                bitmap = ((0x7f << phase) & 0x7f00) >> 8 | 0x80
+            else:                
+                bitmap = ((0x7f << phase) & 0x7f00) >> 8
+                
             for i in range(1,9):
                 petal_bus.writeto_mem(PETAL_ADDRESS, i, bytes([bitmap]))
             #if i == petal:
@@ -112,7 +120,7 @@ while True:
 
 
     
-    time.sleep_ms(10)
+    time.sleep_ms(5)
     bootLED.off()
 
 
