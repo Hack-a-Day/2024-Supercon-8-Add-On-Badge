@@ -2,21 +2,24 @@ from machine import I2C, Pin
 import time
 
 counter = 0
+delay_time = 100
+direction = 1
+velocity = 0
+step = 1000
+step_change = -1
+c2 = 0
+tw = 0
+vel_array = [1,2,4,8,16,32,64]
+loc_array = [0,0,0,0,0,0,0]
+rot_count = 0
 
-## do a quick spiral to test
-if petal_bus:
-    for j in range(8):
-        which_leds = (1 << (j+1)) - 1 
-        for i in range(1,9):
-            print(which_leds)
-            petal_bus.writeto_mem(PETAL_ADDRESS, i, bytes([which_leds]))
-            time.sleep_ms(30)
-            petal_bus.writeto_mem(PETAL_ADDRESS, i, bytes([which_leds]))
+intensity_regs = [0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00]
+
 
 while True:
 
     ## display button status on RGB
-    if petal_bus:
+    if False:
         if not buttonA.value():
             petal_bus.writeto_mem(PETAL_ADDRESS, 2, bytes([0x80]))
         else:
@@ -34,24 +37,72 @@ while True:
 
     ## see what's going on with the touch wheel
     if touchwheel_bus:
+        last_tw = tw
         tw = touchwheel_read(touchwheel_bus)
-
-    ## display touchwheel on petal
-    if petal_bus and touchwheel_bus:
-        if tw > 0:
-            tw = (128 - tw) % 256 
-            petal = int(tw/32) + 1
-        else: 
-            petal = 999
-        for i in range(1,9):
-            if i == petal:
-                petal_bus.writeto_mem(0, i, bytes([0x7F]))
-            else:
-                petal_bus.writeto_mem(0, i, bytes([0x00]))
+        print(tw)
+        if (last_tw - tw) % 256 < (tw - last_tw) % 256:
+            velocity = (last_tw - tw) % 256
+        else:
+            velocity =  -((tw - last_tw) % 256)
+          
+    step = step + step_change      
+    if step > 2000 or step < 400:
+        step_change = -step_change
+        
+    
+    if tw > 0:
+        delay_time = 10 + tw
+    
+    for i in range(7):
+        loc_array[i] += vel_array[i]
+        if loc_array[i] >= 1024:
+            loc_array[i] = loc_array[i] - 1024
+            
+            
+    
+    c2 = c2 + (step >> 3)
+    limit = 1000
+    if c2 >= limit:
+        
+        #print(velocity)
+        c2 = c2 - limit
+        counter = counter + direction
+        if counter == 18 or counter == 0:
+            direction = -direction
+            #print(velocity)
+        
+        rot_count = (rot_count + 1) % 8
+        for i in range(8):
+            if (i % 4) == (rot_count % 4):
+                intensity_regs[i] = 0x0F
+            elif (i+1 % 4) == (rot_count % 4) or (i-1 % 4) == (rot_count % 4):
+                intensity_regs[i] = 0x07
+            else:                
+                intensity_regs[i] = 0x00
+                
+        ## display touchwheel on petal
+        if petal_bus and touchwheel_bus:
+            for i in range(4):
+                base_addr = 0x10
+                #intensity_byte = (intensity_regs[i*2+1] << 4) | intensity_regs[i*2]
+                intensity = int(15.5 * (step - 400) / (2000 - 400))
+                intensity_byte = intensity << 4 | intensity
+                
+                petal_bus.writeto_mem(PETAL_ADDRESS, base_addr+i, bytes([intensity_byte]))
+            
+            bitmap = 0
+            for i in range(counter):
+                bitmap = ((0x7f << counter) & 0x7f00) >> 8 
+            for i in range(1,9):
+                petal_bus.writeto_mem(PETAL_ADDRESS, i, bytes([bitmap]))
+            #if i == petal:
+            #    petal_bus.writeto_mem(0, i, bytes([0x3F]))
+            #else:
+            #    petal_bus.writeto_mem(0, i, bytes([0x00]))
 
 
     
-    time.sleep_ms(100)
+    time.sleep_ms(5)
     bootLED.off()
 
 
