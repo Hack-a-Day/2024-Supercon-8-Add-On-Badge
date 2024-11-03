@@ -5,7 +5,7 @@ import random
 
 
 
-max_mode = 12
+max_mode = 13
 mode = max_mode - 1
 counter = 0.0
 delay_time = 100
@@ -53,7 +53,10 @@ while True:
      
     countdown = countdown - timestep
     if countdown < 0:
-        mode = random.randint(0,max_mode-1)
+        next_mode = mode
+        while next_mode == mode:
+            next_mode = random.randint(0,max_mode-1)
+        mode = next_mode
         c2 = 0
         countdown = timeout
         print("mode:", mode)
@@ -136,6 +139,7 @@ while True:
             for j in range(7):
                 if random.randint(0,1000) < 10:
                     display[i] = display[i] ^ 1 << j
+
     elif mode == 4:
         for i in range(8):
             display[i] = 0
@@ -173,9 +177,12 @@ while True:
         t1 = c2 / 30
         t2 = t1 - math.pi / 8
         t3 = t2 - math.pi / 8
-        p1 = int((math.sin(t1) + 1) * 4)
-        p2 = int((math.sin(t2) + 1) * 4)
-        p3 = int((math.sin(t3) + 1) * 4)
+        count = int(t1 / (math.pi * 2))
+
+        p1 = (count + int((math.sin(t1) + 1) * 4)) % 8
+        p2 = (count + int((math.sin(t2) + 1) * 4)) % 8
+        p3 = (count + int((math.sin(t3) + 1) * 4)) % 8
+        
         for i in range(8):
             if i == p1:
                 display[i] = 0x7f
@@ -231,7 +238,26 @@ while True:
                 if (phase + j * 8 + i) % stepx == 0:
                     display[i] = 1 << j
             
-                
+    elif mode == 12:
+        for i in range(8):
+            display[i] = 0
+        c2 = c2 + 1
+        phase = (c2 >> 3) % 24
+        phase2 = (-c2 >> 5) % 8
+        for loc in range(4):
+        
+            for i in range(8):
+                intensity_vals[i] = 9
+                if int(phase / 3) == i:
+                    display[i] = display[i] | 1 << (6 - (phase % 3))
+            phase = (phase + 1) % 24
+            
+        for i in range(8):
+            if phase2 == i:
+                display[i] = display[i] | 1
+            if (phase2 + 1) % 8 == i:
+                display[i] = display[i] | 2
+                    
                     
             
     for i in range(4):
