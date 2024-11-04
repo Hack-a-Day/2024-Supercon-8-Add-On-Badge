@@ -2,8 +2,7 @@ from machine import I2C, Pin
 import time
 import math
 import random
-
-
+from bleradio import BLERadio
 
 max_mode = 13
 mode = max_mode - 1
@@ -29,10 +28,13 @@ display = bytearray(8)
 debounce = { buttonA : 0, buttonB : 0 , buttonC : 0 }
 clicked = { buttonA : False, buttonB : False , buttonC : False }
 
-debounce_max = 8
+debounce_max = 4
 
 intensity_vals = bytearray(8)
-
+broadcast_channel = 0
+observe_channel = 0
+max_channels = 8
+radio_mode  = False
 
 while True:
 
@@ -40,17 +42,29 @@ while True:
         clicked[button] = False
         if not button.value() and debounce[button] < debounce_max:
             debounce[button] = debounce[button] + 1
-            if debounce[button] == 4:
+            if debounce[button] == debounce_max >> 1:
                 clicked[button] = True
         elif debounce[button] > 0:
             debounce[button] = debounce[button] - 1
          
     if clicked[buttonA]:
-        mode = (mode + 1) % max_mode
-        countdown = timeout
-        c2 = 0
-        print("mode:", mode)
-     
+        if radio_mode:
+            broadcast_channel = (broadcast_channel + 1) % max_channels
+            radio = BLERadio(broadcast_channel=broadcast_channel, observe_channels=list(range(8)))
+        else:
+            mode = (mode + 1) % max_mode
+            countdown = timeout
+            c2 = 0
+            print("mode:", mode)
+             
+    if clicked[buttonB]:
+         observe_channel = (observe_channel + 1) % max_channels
+
+    if clicked[buttonC]:
+        radio_mode = not radio_mode
+        if radio_mode:
+            radio = BLERadio(broadcast_channel=broadcast_channel, observe_channels=list(range(8)))
+        
     countdown = countdown - timestep
     if countdown < 0:
         next_mode = mode
@@ -61,7 +75,48 @@ while True:
         countdown = timeout
         print("mode:", mode)
         
-    if mode == 0:
+        
+    if radio_mode:
+        c2 = c2 + 1
+        if c2 % 20 == 0:
+            ## see what's going on with the touch wheel
+            if touchwheel_bus:
+                tw = touchwheel_read(touchwheel_bus)
+                
+            radio.broadcast([tw])
+            
+            ob = radio.observe(observe_channel)
+            tw_ob = 0
+            if ob is not None:
+                tw_ob = ob[0]
+                
+            ## display touchwheel on petal
+            if petal_bus and touchwheel_bus:
+                base_addr = 1
+                if tw_ob > 0:
+                    tw_ob = (128 - tw_ob) % 256 
+                    petal = int(tw_ob/32) + 1
+                    for i in range(8):
+                        if i == petal:
+                            petal_bus.writeto_mem(0, base_addr + i, bytes([0x7F]))
+                        else:
+                            petal_bus.writeto_mem(0, base_addr + i, bytes([0x00]))
+                else:
+                    for i in range(8):
+                        pattern = 0
+                        if i <= broadcast_channel:
+                            pattern = pattern | 1
+                        if i <= observe_channel:
+                            pattern = pattern | 0x40
+                        
+                            
+                        petal_bus.writeto_mem(0, base_addr + i, bytes([pattern]))
+                        
+                                         
+            
+        
+        
+    elif mode == 0:
         ## see what's going on with the touch wheel
         if touchwheel_bus:
             
@@ -259,16 +314,16 @@ while True:
                 display[i] = display[i] | 2
                     
                     
-            
-    for i in range(4):
-        base_reg = 0x10
-        reg_byte = intensity_vals[i*2+1] << 4 | intensity_vals[i*2]
-        petal_bus.writeto_mem(PETAL_ADDRESS, base_reg + i, bytes([reg_byte])) 
+    if not radio_mode:       
+        for i in range(4):
+            base_reg = 0x10
+            reg_byte = intensity_vals[i*2+1] << 4 | intensity_vals[i*2]
+            petal_bus.writeto_mem(PETAL_ADDRESS, base_reg + i, bytes([reg_byte])) 
 
-            
-    for i in range(8):
-        base_reg = 0x01
-        petal_bus.writeto_mem(PETAL_ADDRESS, base_reg + i, bytes([display[i]]))
+                
+        for i in range(8):
+            base_reg = 0x01
+            petal_bus.writeto_mem(PETAL_ADDRESS, base_reg + i, bytes([display[i]]))
  
     time.sleep_ms(timestep)
     bootLED.off()
