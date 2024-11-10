@@ -3,7 +3,7 @@ import time
 import math
 import random
 
-# use `mpremote mep add bleradio` or similar to install
+# use `mpremote mep add https://raw.githubusercontent.com/pybricks/micropython-bleradio/master/bleradio.py` or similar to install
 from bleradio import BLERadio
 
 
