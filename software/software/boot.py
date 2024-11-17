@@ -16,21 +16,27 @@ buttonB = Pin(9, Pin.IN, Pin.PULL_UP)
 buttonC = Pin(28, Pin.IN, Pin.PULL_UP)
 
 ## GPIOs
+# Position 1
 gpio11 = Pin(7, Pin.OUT)
 gpio12 = Pin(6, Pin.OUT)
 
+# Position 2
 gpio21 = Pin(5, Pin.OUT)
 gpio22 = Pin(4, Pin.OUT)
 
+# Position 3
 gpio31 = Pin(3, Pin.OUT)
 gpio32 = Pin(2, Pin.OUT)
 
+# Position 4
 gpio41 = Pin(22, Pin.OUT)
 gpio42 = Pin(21, Pin.OUT)
 
+# Position 5
 gpio51 = Pin(20, Pin.OUT)
 gpio52 = Pin(19, Pin.OUT)
 
+# Position 6
 gpio61 = Pin(18, Pin.OUT)
 gpio62 = Pin(17, Pin.OUT)
 
@@ -97,7 +103,7 @@ if not petal_bus:
 ## waiting for wheel with a yellow light
 if petal_bus:
     petal_bus.writeto_mem(PETAL_ADDRESS, 3, bytes([0x80]))
-    petal_bus.writeto_mem(PETAL_ADDRESS, 2, bytes([0x80]))
+    petal_bus.writeto_mem(PETAL_ADDRESS, 4, bytes([0x80]))
 
 ## touchwheel last, with a wait loop,  b/c it doesn't init until animation is over
 ## probably need to implement a timeout here?
@@ -118,21 +124,24 @@ if not touchwheel_bus:
 
 def touchwheel_read(bus):
     """Returns 0 for no touch, 1-255 clockwise around the circle from the south"""
-    return(touchwheel_bus.readfrom_mem(84, 0, 1)[0])
+    return(touchwheel_bus.readfrom_mem(TOUCHWHEEL_ADDRESS, 0, 1)[0])
 
 def touchwheel_rgb(bus, r, g, b):
     """RGB color on the central display.  Each 0-255"""
-    touchwheel_bus.writeto_mem(84, 15, bytes([r]))
-    touchwheel_bus.writeto_mem(84, 16, bytes([g]))
-    touchwheel_bus.writeto_mem(84, 17, bytes([b]))
+    touchwheel_bus.writeto_mem(TOUCHWHEEL_ADDRESS, 15, bytes([r]))
+    touchwheel_bus.writeto_mem(TOUCHWHEEL_ADDRESS, 16, bytes([g]))
+    touchwheel_bus.writeto_mem(TOUCHWHEEL_ADDRESS, 17, bytes([b]))
 
 
 ## goes green if wheel configured
+## goes red if wheel is not found
 if touchwheel_bus and petal_bus:
-    petal_bus.writeto_mem(PETAL_ADDRESS, 3, bytes([0x00]))
-if petal_bus:
-    petal_bus.writeto_mem(PETAL_ADDRESS, 2, bytes([0x80]))
+    petal_bus.writeto_mem(PETAL_ADDRESS, 4, bytes([0x80]))
     time.sleep_ms(200)
-    petal_bus.writeto_mem(PETAL_ADDRESS, 2, bytes([0x00]))
+    petal_bus.writeto_mem(PETAL_ADDRESS, 4, bytes([0x00]))
+if petal_bus and not touchwheel_bus:
+    petal_bus.writeto_mem(PETAL_ADDRESS, 3, bytes([0x80]))
+    time.sleep_ms(200)
+    petal_bus.writeto_mem(PETAL_ADDRESS, 3, bytes([0x00]))
 
 
