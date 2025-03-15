@@ -1,5 +1,9 @@
 from machine import I2C, Pin
 import time
+import joemain
+
+# uncomment following line to run fancy animation and ble radio hacks in joemain.py 
+# joemain()
 
 counter = 0
 
