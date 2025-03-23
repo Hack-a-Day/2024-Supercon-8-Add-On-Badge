@@ -1,12 +1,12 @@
 [submodule "hardware/sao/TouchwheelSAO"]
 	path = hardware/sao/TouchwheelSAO
-	url = git@github.com:todbot/TouchwheelSAO.git
+	url = https://github.com/todbot/TouchwheelSAO.git
 [submodule "documentation/ch32v003/ch32v003fun"]
 	path = documentation/ch32v003/ch32v003fun
-	url = git@github.com:cnlohr/ch32v003fun.git
+	url = https://github.com/cnlohr/ch32v003fun.git
 [submodule "resources/ch32v003/ch32v003fun"]
 	path = resources/ch32v003fun
-	url = git@github.com:cnlohr/ch32v003fun.git
+	url = https://github.com/cnlohr/ch32v003fun.git
 [submodule "software/libraries/MicroPython-SSD1306"]
 	path = software/libraries/MicroPython-SSD1306
 	url = https://github.com/TimHanewich/MicroPython-SSD1306
@@ -15,7 +15,7 @@
 	url = https://github.com/eosti/micropython-aw210xx
 [submodule "i2c_proto_petal_tutorial/pico_ch32v003_prog"]
 	path = i2c_proto_petal_tutorial/pico_ch32v003_prog
-	url = git@github.com:hexagon5un/pico_ch32v003_prog.git
+	url = https://github.com/hexagon5un/pico_ch32v003_prog.git
 [submodule "software/libraries/MicroPython-IR-Transceiver-SAO"]
 	path = software/libraries/MicroPython-IR-Transceiver-SAO
 	url = https://github.com/DmitryPustovit/MicroPython-IR-Transceiver-SAO
